@@ -80,7 +80,7 @@ impl OsuPerformanceCalculator<'_> {
             // * this is well beyond currently maximum achievable OD which is 12.17 (DTx2 + DA with OD11)
             let (n100_mult, n50_mult) = if od > 0.0 {
                 (
-                    (1.0 - (od / 13.33).powf(1.8)).max(0.0),
+                    0.75 * (1.0 - (od / 13.33)).max(0.0),
                     (1.0 - (od / 13.33).powf(5.0)).max(0.0),
                 )
             } else {
