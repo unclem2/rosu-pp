@@ -98,6 +98,22 @@ impl OsuPerformanceCalculator<'_> {
         let acc_value = self.compute_accuracy_value();
         let flashlight_value = self.compute_flashlight_value();
 
+        if self.mods.rx() {
+            let aim_strain = self.attrs.aim;
+            let speed_strain = self.attrs.speed.max(1e-6);
+
+            let streams_nerf =
+                ((aim_strain / speed_strain) * 100.0).round() / 100.0;
+
+            if streams_nerf < 1.09 {
+                let acc_factor = (1.0 - self.acc).abs();
+                let acc_depression = (0.86 - acc_factor).max(0.5);
+
+                aim_value *= acc_depression;
+                speed_value = speed_value.powf(0.76 * acc_depression);
+            }
+        }
+
         let pp = (aim_value.powf(1.1)
             + speed_value.powf(1.1)
             + acc_value.powf(1.1)
