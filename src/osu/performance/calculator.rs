@@ -93,8 +93,8 @@ impl OsuPerformanceCalculator<'_> {
 
         let speed_deviation = self.calculate_speed_deviation();
 
-        let aim_value = self.compute_aim_value();
-        let speed_value = self.compute_speed_value(speed_deviation);
+        let mut aim_value = self.compute_aim_value();
+        let mut speed_value = self.compute_speed_value(speed_deviation);
         let acc_value = self.compute_accuracy_value();
         let flashlight_value = self.compute_flashlight_value();
 
