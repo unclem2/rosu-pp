@@ -228,10 +228,9 @@ impl OsuPerformanceCalculator<'_> {
     }
 
     fn compute_speed_value(&self, speed_deviation: Option<f64>) -> f64 {
-        let Some(speed_deviation) = speed_deviation.filter(|_| !self.mods.rx()) else {
+        let Some(speed_deviation) = speed_deviation.filter(|_| !self.mods.rx()).or(speed_deviation) else {
             return 0.0;
         };
-
         let mut speed_value = Speed::difficulty_to_performance(self.attrs.speed);
 
         let total_hits = self.total_hits();
