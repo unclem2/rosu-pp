@@ -105,12 +105,12 @@ impl OsuPerformanceCalculator<'_> {
             let streams_nerf =
                 ((aim_strain / speed_strain) * 100.0).round() / 100.0;
 
-            if streams_nerf < 1.09 {
+            if streams_nerf < 1.15 {
                 let acc_factor = (1.0 - self.acc).abs();
-                let acc_depression = (0.86 - acc_factor).max(0.5);
+                let acc_depression = (0.80 - acc_factor).max(0.3);
 
-                aim_value *= acc_depression;
-                speed_value = speed_value.powf(0.76 * acc_depression);
+                 aim_value *= acc_depression.powf(1.5)
+                speed_value = speed_value.powf(0.70 * acc_depression);
             }
         }
 
