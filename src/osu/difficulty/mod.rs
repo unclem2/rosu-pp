@@ -157,6 +157,10 @@ impl DifficultyValues {
             flashlight_rating = flashlight_rating.powf(0.8);
         }
 
+        // Save the raw speed rating before RX zeroes it so performance
+        // calculation can use it for the streams nerf.
+        let raw_speed_rating = speed_rating;
+
         if mods.rx() {
             aim_rating *= 0.9;
             speed_rating = 0.0;
@@ -191,7 +195,8 @@ impl DifficultyValues {
 
         attrs.aim = aim_rating;
         attrs.aim_difficult_slider_count = difficult_sliders;
-        attrs.speed = speed_rating;
+        // Use raw speed rating for RX so performance calculation can nerf streams
+        attrs.speed = if mods.rx() { raw_speed_rating } else { speed_rating };
         attrs.flashlight = flashlight_rating;
         attrs.slider_factor = slider_factor;
         attrs.aim_difficult_strain_count = aim_difficult_strain_count;
