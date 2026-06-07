@@ -110,7 +110,7 @@ impl OsuPerformanceCalculator<'_> {
             println!("DEBUG: ratio={} nerf_factor={}", ratio, nerf_factor);
         
             aim_value *= nerf_factor;
-            speed_value *= nerf_factor;
+            speed_value = 0
         }
 
         let pp = (aim_value.powf(1.1)
