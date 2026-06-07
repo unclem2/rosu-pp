@@ -100,19 +100,17 @@ impl OsuPerformanceCalculator<'_> {
 
         if self.mods.rx() {
             let aim_strain = self.attrs.aim;
-            let speed_strain = self.attrs.speed.max(1e-6);
-            let streams_nerf = ((aim_strain / speed_strain) * 100.0).round() / 100.0;
-
-            println!("DEBUG: aim={} speed={} streams_nerf={}", aim_strain, speed_strain, streams_nerf);
-
-            if streams_nerf < 1.15 {
-                println!("DEBUG: nerf applying, nerf_factor={}", (streams_nerf / 1.15).powf(2.0));
-                let nerf_factor = (streams_nerf / 1.15).powf(2.0);
-                aim_value *= nerf_factor;
-                speed_value = speed_value.powf(0.65 * nerf_factor);
-            } else {
-                println!("DEBUG: nerf NOT applying, streams_nerf={} is >= 1.15", streams_nerf);
-            }
+            let speed_strain = self.attrs.speed;
+        
+            println!("DEBUG: aim={} speed={} streams_nerf={}", aim_strain, speed_strain, ((aim_strain / speed_strain) * 100.0).round() / 100.0);
+        
+            let ratio = (speed_strain / aim_strain).clamp(0.0, 1.0);
+            let nerf_factor = ratio.powf(0.5).clamp(0.4, 1.0);
+        
+            println!("DEBUG: ratio={} nerf_factor={}", ratio, nerf_factor);
+        
+            aim_value *= nerf_factor;
+            speed_value *= nerf_factor;
         }
 
         let pp = (aim_value.powf(1.1)
