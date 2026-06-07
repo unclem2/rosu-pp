@@ -105,7 +105,7 @@ impl OsuPerformanceCalculator<'_> {
             let streams_nerf =
                 ((aim_strain / speed_strain) * 100.0).round() / 100.0;
 
-           if streams_nerf < 1.0 {
+           if streams_nerf < 1.30 {
                 let nerf_factor = (streams_nerf / 1.15).powf(2.0);
                 aim_value *= nerf_factor;
                 speed_value = speed_value.powf(0.65 * nerf_factor);
