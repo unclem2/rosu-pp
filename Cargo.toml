@@ -5,7 +5,7 @@ edition = "2024"
 authors = ["MaxOhn <ohn.m@hotmail.de>"]
 license = "MIT"
 readme = "README.md"
-repository = "https://github.com/MaxOhn/rosu-pp"
+repository = "https://github.com/unclem2/rosu-pp"
 documentation = "https://docs.rs/rosu-pp/"
 description = "Difficulty and performance calculation for osu!"
 keywords = ["osu", "pp", "stars", "performance", "difficulty"]
@@ -18,12 +18,12 @@ tracing = ["rosu-map/tracing"]
 [dependencies]
 divan = "0.1.21"
 rosu-map = { version = "0.2.1" }
-rosu-mods = { version = "0.4.0" }
+rosu-mods = { git = "https://github.com/unclem2/rosu-mods" }
 
 [dev-dependencies]
 divan = { version = "0.1.21" }
-proptest = { version = "1.8.0" }
-rosu-mods = { version = "0.4.0", features = ["macros"] }
+proptest = { version = "1.11.0" }
+rosu-mods = { git = "https://github.com/unclem2/rosu-mods", features = ["macros"] }
 
 [profile.test.package.proptest]
 opt-level = 3

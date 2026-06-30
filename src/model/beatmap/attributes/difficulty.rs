@@ -103,5 +103,52 @@ impl BeatmapDifficulty {
                 GameMode::Mania => {}
             }
         }
+        if mods.re() {
+            let GameMods::Lazer(lazer_mods) = mods else {
+                return;
+            };
+
+            let mut has_ar = false;
+            let mut has_cs = false;
+            let mut has_od = false;
+            let mut has_hp = false;
+
+            for m in lazer_mods.iter() {
+                if let GameMod::DifficultyAdjustOsu(da) = m {
+                    has_ar |= da.approach_rate.is_some();
+                    has_cs |= da.circle_size.is_some();
+                    has_od |= da.overall_difficulty.is_some();
+                    has_hp |= da.drain_rate.is_some();
+                }
+            }
+
+            if !has_ar {
+                if mods.ez() {
+                    self.ar.try_mutate(|ar| {
+                        *ar *= 2.0;
+                        *ar -= 0.5;
+                    });
+                }
+
+                let speed = lazer_mods.clock_rate().unwrap_or(1.0) as f32;
+
+                self.ar.try_mutate(|ar| {
+                    *ar -= 0.5;
+                    *ar -= speed - 1.0;
+                });
+            }
+
+            if !has_cs {
+                self.cs.try_mutate(|cs| *cs *= 0.5);
+            }
+
+            if !has_od {
+                self.od.try_mutate(|od| *od *= 0.5);
+            }
+
+            if !has_hp {
+                self.hp.try_mutate(|hp| *hp *= 0.5);
+            }
+        }
     }
 }

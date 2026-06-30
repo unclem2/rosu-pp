@@ -329,6 +329,7 @@ impl_has_mod! {
     invert: - Invert ["Invert"],
     ho: - HoldOff ["HoldOff"],
     tc: - Traceable ["Traceable"],
+    re: - ReallyEasy ["ReallyEasy"],
 }
 
 impl Default for GameMods {
