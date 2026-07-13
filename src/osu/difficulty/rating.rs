@@ -64,9 +64,7 @@ impl OsuRatingCalculator<'_> {
                 * (f64::from(self.total_hits) / 2000.0).log10()
                 * 0.5;
 
-        let ar_factor = if self.mods.rx() {
-            0.0
-        } else if self.approach_rate > 10.33 {
+        let ar_factor = if self.approach_rate > 10.33 {
             0.3 * (self.approach_rate - 10.33)
         } else if self.approach_rate < 8.0 {
             0.05 * (8.0 - self.approach_rate)
