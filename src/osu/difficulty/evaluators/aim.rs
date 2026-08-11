@@ -83,8 +83,7 @@ impl AimEvaluator {
 
         // Relax mod
         if relax {
-            combined_snap_difficulty *= 0.75;
-            flow_difficulty *= 0.5;
+            flow_difficulty *= 0.7;
         }
 
         let total_difficulty =
