@@ -17,6 +17,7 @@ pub struct OsuDifficultyObject<'a> {
 
     pub adjusted_delta_time: f64,
     pub lazy_jump_dist: f64,
+    pub jump_dist: f64,
     pub min_jump_dist: f64,
     pub min_jump_time: f64,
     pub travel_dist: f64,
@@ -25,8 +26,11 @@ pub struct OsuDifficultyObject<'a> {
     pub lazy_travel_dist: f64,
     pub lazy_travel_time: f64,
     pub angle: Option<f64>,
+    pub normalised_vector_angle: Option<f64>,
 
     pub small_circle_bonus: f64,
+    pub object_radius: f64,
+    pub overall_difficulty: f64,
 }
 
 impl<'a> OsuDifficultyObject<'a> {
@@ -43,6 +47,7 @@ impl<'a> OsuDifficultyObject<'a> {
         last_diff_obj: Option<&OsuDifficultyObject>,
         last_last_diff_obj: Option<&OsuDifficultyObject>,
         clock_rate: f64,
+        great_hit_window: f64,
         idx: usize,
         scaling_factor: &ScalingFactor,
     ) -> Self {
@@ -51,6 +56,7 @@ impl<'a> OsuDifficultyObject<'a> {
 
         let strain_time = delta_time.max(Self::MIN_DELTA_TIME);
         let small_circle_bonus = (1.0 + (30.0 - scaling_factor.radius) / 40.0).max(1.0);
+        let overall_difficulty = (79.5 - great_hit_window / 2.0) / 6.0;
 
         let mut this = Self {
             idx,
@@ -59,6 +65,7 @@ impl<'a> OsuDifficultyObject<'a> {
             delta_time,
             adjusted_delta_time: strain_time,
             lazy_jump_dist: 0.0,
+            jump_dist: 0.0,
             min_jump_dist: 0.0,
             min_jump_time: 0.0,
             travel_dist: 0.0,
@@ -67,7 +74,10 @@ impl<'a> OsuDifficultyObject<'a> {
             lazy_travel_dist: 0.0,
             lazy_travel_time: 0.0,
             angle: None,
+            normalised_vector_angle: None,
             small_circle_bonus,
+            object_radius: scaling_factor.radius,
+            overall_difficulty,
         };
 
         this.compute_slider_cursor_pos(scaling_factor.radius);
@@ -151,6 +161,9 @@ impl<'a> OsuDifficultyObject<'a> {
             last_object.stacked_pos()
         };
 
+        self.jump_dist = f64::from(
+            (self.base.stacked_pos() * scaling_factor - last_object.stacked_pos() * scaling_factor).length(),
+        );
         self.lazy_jump_dist = f64::from(
             (self.base.stacked_pos() * scaling_factor - last_cursor_pos * scaling_factor).length(),
         );
@@ -195,6 +208,9 @@ impl<'a> OsuDifficultyObject<'a> {
             let det = v1.x * v2.y - v1.y * v2.x;
 
             self.angle = Some((f64::from(det).atan2(f64::from(dot))).abs());
+
+            let v = self.base.stacked_pos() - last_cursor_pos;
+            self.normalised_vector_angle = Some(f64::from(v.y).abs().atan2(f64::from(v.x).abs()));
         }
     }
 

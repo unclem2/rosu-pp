@@ -155,10 +155,10 @@ impl DifficultyValues {
 
         let osu_object_iter = osu_objects.iter_mut().map(Pin::new);
 
-        let diff_objects =
-            Self::create_difficulty_objects(difficulty, &scaling_factor, osu_object_iter);
-
         let great_hit_window = map_attrs.hit_windows().od_great.unwrap_or(0.0);
+
+        let diff_objects =
+            Self::create_difficulty_objects(difficulty, &scaling_factor, great_hit_window, osu_object_iter);
 
         let mut skills = OsuSkills::new(mods, &scaling_factor, great_hit_window, time_preempt);
 
@@ -271,6 +271,7 @@ impl DifficultyValues {
     pub fn create_difficulty_objects<'a>(
         difficulty: &Difficulty,
         scaling_factor: &ScalingFactor,
+        great_hit_window: f64,
         osu_objects: impl ExactSizeIterator<Item = Pin<&'a mut OsuObject>>,
     ) -> Vec<OsuDifficultyObject<'a>> {
         let take = difficulty.get_passed_objects();
@@ -303,6 +304,7 @@ impl DifficultyValues {
                 last_diff,
                 last_last_diff,
                 clock_rate,
+                great_hit_window,
                 idx,
                 scaling_factor,
             );

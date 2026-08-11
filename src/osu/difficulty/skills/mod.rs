@@ -25,6 +25,8 @@ impl OsuSkills {
         great_hit_window: f64,
         time_preempt: f64,
     ) -> Self {
+        let _ = great_hit_window;
+
         let hit_window = 2.0 * great_hit_window;
 
         // * Preempt time can go below 450ms. Normally, this is achieved via the DT mod
@@ -41,8 +43,20 @@ impl OsuSkills {
             400.0 * (time_preempt / OsuObject::PREEMPT_MIN).min(1.0)
         };
 
-        let aim = Aim::new(true);
-        let aim_no_sliders = Aim::new(false);
+        let aim = Aim::new(
+            true,
+            mods.ap(),
+            mods.attraction_strength(),
+            mods.td(),
+            mods.rx(),
+        );
+        let aim_no_sliders = Aim::new(
+            false,
+            mods.ap(),
+            mods.attraction_strength(),
+            mods.td(),
+            mods.rx(),
+        );
         let speed = Speed::new(hit_window, mods.ap());
         let flashlight = Flashlight::new(mods, scaling_factor.radius, time_preempt, time_fade_in);
 

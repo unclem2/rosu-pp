@@ -38,23 +38,7 @@ impl<'mods> OsuRatingCalculator<'mods> {
 
 impl OsuRatingCalculator<'_> {
     pub fn compute_aim_rating(&self, aim_difficulty_value: f64) -> f64 {
-        if self.mods.ap() {
-            return 0.0;
-        }
-
-        let mut aim_rating = Self::calculate_difficulty_rating(aim_difficulty_value);
-
-        if self.mods.td() {
-            aim_rating = aim_rating.powf(0.8);
-        }
-
-        if self.mods.rx() {
-            aim_rating *= 0.9;
-        }
-
-        if let Some(magnetised_strength) = self.mods.attraction_strength() {
-            aim_rating *= 1.0 - magnetised_strength;
-        }
+        let aim_rating = Self::calculate_difficulty_rating(aim_difficulty_value);
 
         let mut rating_multiplier = 1.0;
 

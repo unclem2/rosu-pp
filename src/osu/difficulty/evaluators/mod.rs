@@ -3,7 +3,10 @@ pub use self::{
     speed::SpeedEvaluator,
 };
 
+mod agility;
 mod aim;
+mod flow_aim;
 mod flashlight;
 mod rhythm;
+mod snap_aim;
 mod speed;

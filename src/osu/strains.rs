@@ -41,8 +41,8 @@ pub fn strains(difficulty: &Difficulty, map: &Beatmap) -> Result<OsuStrains, Con
     } = DifficultyValues::calculate(difficulty, &map);
 
     Ok(OsuStrains {
-        aim: aim.into_current_strain_peaks(),
-        aim_no_sliders: aim_no_sliders.into_current_strain_peaks(),
+        aim: aim.get_current_strain_peaks().into_iter().map(|p| p.value).collect(),
+        aim_no_sliders: aim_no_sliders.get_current_strain_peaks().into_iter().map(|p| p.value).collect(),
         speed: speed.into_current_strain_peaks(),
         flashlight: flashlight.into_current_strain_peaks(),
     })

@@ -139,13 +139,14 @@ fn new(difficulty: Difficulty, map: &Beatmap) -> OsuGradualDifficulty {
 
     let mut osu_objects = OsuObjects::new(osu_objects);
 
+    let great_hit_window = map_attrs.hit_windows().od_great.unwrap_or(0.0);
+
     let diff_objects = DifficultyValues::create_difficulty_objects(
         &difficulty,
         &scaling_factor,
+        great_hit_window,
         osu_objects.iter_mut(),
     );
-
-    let great_hit_window = map_attrs.hit_windows().od_great.unwrap_or(0.0);
 
     let skills = OsuSkills::new(mods, &scaling_factor, great_hit_window, time_preempt);
     let diff_objects = extend_lifetime(diff_objects.into_boxed_slice());
