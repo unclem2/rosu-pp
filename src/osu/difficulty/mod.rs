@@ -1,7 +1,7 @@
 use std::{cmp, pin::Pin};
 
 use rosu_map::section::general::GameMode;
-use skills::{aim::Aim, flashlight::Flashlight, speed::Speed, strain::OsuStrainSkill};
+use skills::{aim::Aim, flashlight::Flashlight, reading::Reading, speed::Speed, strain::OsuStrainSkill};
 
 use crate::{
     Beatmap,
@@ -63,14 +63,14 @@ fn calculate_difficulty(difficulty: &Difficulty, map: &Beatmap) -> OsuDifficulty
 
     let DifficultyValues {
         osu_objects,
-        skills,
+        mut skills,
         mut attrs,
     } = DifficultyValues::calculate(difficulty, map);
 
     let mods = difficulty.get_mods();
     let passed_objects = difficulty.get_passed_objects();
 
-    DifficultyValues::eval(&mut attrs, mods, &skills);
+    DifficultyValues::eval(&mut attrs, mods, &mut skills);
 
     let mut simulator = OsuLegacyScoreSimulator::new(&osu_objects, map, passed_objects);
 
@@ -158,7 +158,7 @@ impl DifficultyValues {
         let great_hit_window = map_attrs.hit_windows().od_great.unwrap_or(0.0);
 
         let diff_objects =
-            Self::create_difficulty_objects(difficulty, &scaling_factor, great_hit_window, osu_object_iter);
+            Self::create_difficulty_objects(difficulty, &scaling_factor, great_hit_window, osu_object_iter, time_preempt);
 
         let mut skills = OsuSkills::new(mods, &scaling_factor, great_hit_window, time_preempt);
 
@@ -177,12 +177,13 @@ impl DifficultyValues {
     }
 
     /// Process the difficulty values and store the results in `attrs`.
-    pub fn eval(attrs: &mut OsuDifficultyAttributes, mods: &GameMods, skills: &OsuSkills) {
+    pub fn eval(attrs: &mut OsuDifficultyAttributes, mods: &GameMods, skills: &mut OsuSkills) {
         let OsuSkills {
             aim,
             aim_no_sliders,
             speed,
             flashlight,
+            reading,
         } = skills;
 
         let aim_difficulty_value = aim.cloned_difficulty_value();
@@ -244,13 +245,21 @@ impl DifficultyValues {
             0.0
         };
 
+        let reading_difficulty_value = reading.difficulty_value();
+        let reading_difficult_note_count =
+            reading.count_top_weighted_object_difficulties(reading_difficulty_value);
+        let reading_rating = OsuRatingCalculator::calculate_difficulty_rating(reading_difficulty_value);
+
         let base_aim_performance = Aim::difficulty_to_performance(aim_rating);
         let base_speed_performance = Speed::difficulty_to_performance(speed_rating);
+        let base_reading_performance = Reading::difficulty_to_performance(reading_rating);
         let base_flashlight_performance = Flashlight::difficulty_to_performance(flashlight_rating);
+        let base_cognition_performance =
+            sum_cognition_difficulty(base_reading_performance, base_flashlight_performance);
 
         let base_performance = ((base_aim_performance).powf(1.1)
             + (base_speed_performance).powf(1.1)
-            + (base_flashlight_performance).powf(1.1))
+            + (base_cognition_performance).powf(1.1))
         .powf(1.0 / 1.1);
 
         let star_rating = calculate_star_rating(base_performance);
@@ -259,6 +268,8 @@ impl DifficultyValues {
         attrs.aim_difficult_slider_count = difficult_sliders;
         attrs.speed = speed_rating;
         attrs.flashlight = flashlight_rating;
+        attrs.reading = reading_rating;
+        attrs.reading_difficult_note_count = reading_difficult_note_count;
         attrs.slider_factor = slider_factor;
         attrs.aim_top_weighted_slider_factor = aim_top_weighted_slider_factor;
         attrs.speed_top_weighted_slider_factor = speed_top_weighted_slider_factor;
@@ -273,6 +284,7 @@ impl DifficultyValues {
         scaling_factor: &ScalingFactor,
         great_hit_window: f64,
         osu_objects: impl ExactSizeIterator<Item = Pin<&'a mut OsuObject>>,
+        time_preempt: f64,
     ) -> Vec<OsuDifficultyObject<'a>> {
         let take = difficulty.get_passed_objects();
         let clock_rate = difficulty.get_clock_rate();
@@ -307,6 +319,7 @@ impl DifficultyValues {
                 great_hit_window,
                 idx,
                 scaling_factor,
+                time_preempt,
             );
 
             last = h;
@@ -332,6 +345,18 @@ fn calculate_mechanical_difficulty_rating(
     let total_value = (aim_value.powf(1.1) + speed_value.powf(1.1)).powf(1.0 / 1.1);
 
     calculate_star_rating(total_value)
+}
+
+pub fn sum_cognition_difficulty(reading: f64, flashlight: f64) -> f64 {
+    if reading <= 0.0 {
+        return flashlight;
+    }
+
+    if flashlight <= 0.0 {
+        return reading;
+    }
+
+    crate::util::difficulty::norm(1.1, [reading, flashlight * (flashlight / reading).clamp(0.25, 1.0)])
 }
 
 fn calculate_star_rating(base_performance: f64) -> f64 {

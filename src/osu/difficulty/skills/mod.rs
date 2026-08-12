@@ -1,6 +1,6 @@
 use crate::{any::difficulty::skills::StrainSkill, model::mods::GameMods, osu::object::OsuObject};
 
-use self::{aim::Aim, flashlight::Flashlight, speed::Speed};
+use self::{aim::Aim, flashlight::Flashlight, reading::Reading, speed::Speed};
 
 use super::{
     HD_FADE_IN_DURATION_MULTIPLIER, object::OsuDifficultyObject, scaling_factor::ScalingFactor,
@@ -8,6 +8,7 @@ use super::{
 
 pub mod aim;
 pub mod flashlight;
+pub mod reading;
 pub mod speed;
 pub mod strain;
 
@@ -16,6 +17,7 @@ pub struct OsuSkills {
     pub aim_no_sliders: Aim,
     pub speed: Speed,
     pub flashlight: Flashlight,
+    pub reading: Reading,
 }
 
 impl OsuSkills {
@@ -60,11 +62,15 @@ impl OsuSkills {
         let speed = Speed::new(hit_window, mods.ap());
         let flashlight = Flashlight::new(mods, scaling_factor.radius, time_preempt, time_fade_in);
 
+        let overall_difficulty = (79.5 - great_hit_window / 2.0) / 6.0;
+        let reading = Reading::new(mods, overall_difficulty);
+
         Self {
             aim,
             aim_no_sliders,
             speed,
             flashlight,
+            reading,
         }
     }
 
@@ -73,5 +79,6 @@ impl OsuSkills {
         self.aim_no_sliders.process(curr, objects);
         self.speed.process(curr, objects);
         self.flashlight.process(curr, objects);
+        self.reading.process(curr, objects);
     }
 }

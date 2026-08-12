@@ -31,6 +31,8 @@ pub struct OsuDifficultyObject<'a> {
     pub small_circle_bonus: f64,
     pub object_radius: f64,
     pub overall_difficulty: f64,
+    pub preempt: f64,
+    pub fade_in: f64,
 }
 
 impl<'a> OsuDifficultyObject<'a> {
@@ -50,6 +52,7 @@ impl<'a> OsuDifficultyObject<'a> {
         great_hit_window: f64,
         idx: usize,
         scaling_factor: &ScalingFactor,
+        preempt: f64,
     ) -> Self {
         let delta_time = (hit_object.start_time - last_object.start_time) / clock_rate;
         let start_time = hit_object.start_time / clock_rate;
@@ -57,6 +60,8 @@ impl<'a> OsuDifficultyObject<'a> {
         let strain_time = delta_time.max(Self::MIN_DELTA_TIME);
         let small_circle_bonus = (1.0 + (30.0 - scaling_factor.radius) / 40.0).max(1.0);
         let overall_difficulty = (79.5 - great_hit_window / 2.0) / 6.0;
+
+        let fade_in = 400.0 * (preempt / OsuObject::PREEMPT_MIN).min(1.0);
 
         let mut this = Self {
             idx,
@@ -78,6 +83,8 @@ impl<'a> OsuDifficultyObject<'a> {
             small_circle_bonus,
             object_radius: scaling_factor.radius,
             overall_difficulty,
+            preempt,
+            fade_in,
         };
 
         this.compute_slider_cursor_pos(scaling_factor.radius);
@@ -201,15 +208,50 @@ impl<'a> OsuDifficultyObject<'a> {
         if !last_last_diff_obj.base.is_spinner() {
             let last_last_cursor_pos = Self::get_end_cursor_pos(last_last_diff_obj);
 
+            // C# modifies lastCursorPosition BEFORE computing both angles
+            let last_cursor_pos_for_angle = if last_diff_obj.base.is_slider() && last_diff_obj.travel_dist > 0.0 {
+                // Use HeadCircle position (slider's start pos = stacked_pos)
+                last_diff_obj.base.stacked_pos()
+            } else {
+                last_cursor_pos
+            };
+
+            // Regular angle: uses modified last_cursor_pos_for_angle and last_last_cursor_pos
             let v1 = last_last_cursor_pos - last_object.stacked_pos();
-            let v2 = self.base.stacked_pos() - last_cursor_pos;
+            let v2 = self.base.stacked_pos() - last_cursor_pos_for_angle;
 
             let dot = v1.dot(v2);
             let det = v1.x * v2.y - v1.y * v2.x;
 
-            self.angle = Some((f64::from(det).atan2(f64::from(dot))).abs());
+            let angle = (f64::from(det).atan2(f64::from(dot))).abs();
 
-            let v = self.base.stacked_pos() - last_cursor_pos;
+            // sliderAngle: uses UNMODIFIED last_cursor_pos and secondLastNestedObject if slider
+            let slider_angle = if let OsuObjectKind::Slider(ref last_slider) = last_diff_obj.base.kind {
+                if last_diff_obj.travel_dist > 0.0 {
+                    let unmod_cursor_pos = Self::get_end_cursor_pos(last_diff_obj);
+                    let second_last_pos = last_slider
+                        .nested_objects
+                        .get(last_slider.nested_objects.len().wrapping_sub(2))
+                        .map(|nested| nested.pos + last_diff_obj.base.stack_offset)
+                        .unwrap_or(last_last_cursor_pos);
+
+                    let sv1 = second_last_pos - unmod_cursor_pos;
+                    let sv2 = self.base.stacked_pos() - unmod_cursor_pos;
+
+                    let sdot = sv1.dot(sv2);
+                    let sdet = sv1.x * sv2.y - sv1.y * sv2.x;
+
+                    (f64::from(sdet).atan2(f64::from(sdot))).abs()
+                } else {
+                    angle
+                }
+            } else {
+                angle
+            };
+
+            self.angle = Some(angle.min(slider_angle));
+
+            let v = self.base.stacked_pos() - last_cursor_pos_for_angle;
             self.normalised_vector_angle = Some(f64::from(v.y).abs().atan2(f64::from(v.x).abs()));
         }
     }

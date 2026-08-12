@@ -189,9 +189,7 @@ impl SnapAimEvaluator {
     ) -> f64 {
         let _ = previous;
 
-        let (Some(curr_norm_angle), Some(_prev_norm_angle)) =
-            (current.normalised_vector_angle, previous.normalised_vector_angle)
-        else {
+        let (Some(_curr_angle_val), Some(_last_angle_val)) = (current.angle, previous.angle) else {
             return 1.0;
         };
 
@@ -214,7 +212,9 @@ impl SnapAimEvaluator {
                 break;
             }
 
-            if let Some(prev_obj_norm_angle) = prev_obj.normalised_vector_angle {
+            if let (Some(curr_norm_angle), Some(prev_obj_norm_angle)) =
+                (current.normalised_vector_angle, prev_obj.normalised_vector_angle)
+            {
                 let angle_difference = (curr_norm_angle - prev_obj_norm_angle).abs();
                 constant_angle_count +=
                     (8.0 * f64::min(f64::to_radians(11.25), angle_difference)).cos();
@@ -237,12 +237,14 @@ impl SnapAimEvaluator {
                 * Self::calc_angle_acuteness(last_angle)
                 * angle_difference_adjusted;
 
-        (base_nerf
+        let result = (base_nerf
             + (1.0 - base_nerf)
                 * vector_repetition
                 * MAXIMUM_VECTOR_INFLUENCE
                 * stack_factor)
-            .powf(2.0)
+            .powf(2.0);
+
+        result
     }
 
     pub fn calc_angle_wideness(angle: f64) -> f64 {

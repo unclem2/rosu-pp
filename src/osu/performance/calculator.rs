@@ -6,7 +6,8 @@ use crate::{
         OsuDifficultyAttributes, OsuPerformanceAttributes, OsuScoreState,
         difficulty::{
             rating::OsuRatingCalculator,
-            skills::{aim::Aim, flashlight::Flashlight, speed::Speed, strain::OsuStrainSkill},
+            skills::{aim::Aim, flashlight::Flashlight, reading::Reading, speed::Speed, strain::OsuStrainSkill},
+            sum_cognition_difficulty,
         },
         legacy_score_miss_calc::OsuLegacyScoreMissCalculator,
     },
@@ -127,12 +128,14 @@ impl OsuPerformanceCalculator<'_> {
             &mut speed_estimated_slider_breaks,
         );
         let acc_value = self.compute_accuracy_value();
+        let reading_value = self.compute_reading_value(effective_miss_count, aim_estimated_slider_breaks);
         let flashlight_value = self.compute_flashlight_value(effective_miss_count);
+        let cognition_value = sum_cognition_difficulty(reading_value, flashlight_value);
 
         let pp = (aim_value.powf(1.1)
             + speed_value.powf(1.1)
             + acc_value.powf(1.1)
-            + flashlight_value.powf(1.1))
+            + cognition_value.powf(1.1))
         .powf(1.0 / 1.1)
             * multiplier;
 
@@ -141,6 +144,7 @@ impl OsuPerformanceCalculator<'_> {
             pp_acc: acc_value,
             pp_aim: aim_value,
             pp_flashlight: flashlight_value,
+            pp_reading: reading_value,
             pp_speed: speed_value,
             pp,
             effective_miss_count,
@@ -407,6 +411,22 @@ impl OsuPerformanceCalculator<'_> {
         flashlight_value *= 0.5 + self.acc / 2.0;
 
         flashlight_value
+    }
+
+    fn compute_reading_value(&self, effective_miss_count: f64, aim_estimated_slider_breaks: f64) -> f64 {
+        let mut reading_value = Reading::difficulty_to_performance(self.attrs.reading);
+
+        if effective_miss_count > 0.0 {
+            reading_value *= Self::calculate_miss_penalty(
+                effective_miss_count + aim_estimated_slider_breaks,
+                self.attrs.reading_difficult_note_count,
+            );
+        }
+
+        // * Scale the reading value with accuracy _harshly_.
+        reading_value *= self.acc.powf(3.0);
+
+        reading_value
     }
 
     fn calculate_combo_based_estimated_miss_count(&self) -> f64 {

@@ -146,6 +146,7 @@ fn new(difficulty: Difficulty, map: &Beatmap) -> OsuGradualDifficulty {
         &scaling_factor,
         great_hit_window,
         osu_objects.iter_mut(),
+        time_preempt,
     );
 
     let skills = OsuSkills::new(mods, &scaling_factor, great_hit_window, time_preempt);
@@ -215,7 +216,7 @@ impl Iterator for OsuGradualDifficulty {
 
         let mut attrs = self.attrs.clone();
 
-        DifficultyValues::eval(&mut attrs, self.difficulty.get_mods(), &self.skills);
+        DifficultyValues::eval(&mut attrs, self.difficulty.get_mods(), &mut self.skills);
 
         Some(attrs)
     }
