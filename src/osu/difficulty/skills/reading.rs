@@ -96,9 +96,9 @@ impl Reading {
             difficulty *= 1.0 - self.magnetised_strength;
         }
 
-        if self.has_relax_mod {
-            difficulty *= 0.4;
-        }
+        // if self.has_relax_mod {
+        //     difficulty *= 0.4;
+        // }
 
         if self.has_autopilot_mod {
             difficulty *= 0.1;
