@@ -33,6 +33,7 @@ impl AimEvaluator {
             FlowAimEvaluator::evaluate_diff_of(curr, diff_objects, with_slider_travel_dist)
                 * Self::SKILL_MULTIPLIER_FLOW;
 
+
         let mut total_difficulty =
             Self::calculate_total_value(snap_difficulty, agility_difficulty, flow_difficulty, touch_device, relax);
 
@@ -41,9 +42,10 @@ impl AimEvaluator {
             total_difficulty *= 1.0 - strength;
         }
 
+
         // OD bonus
-        total_difficulty
-            * (0.985 + curr.overall_difficulty.max(0.0).powf(2.0) / 4000.0)
+        let result = total_difficulty * (0.985 + curr.overall_difficulty.max(0.0).powf(2.0) / 4000.0);
+        result
     }
 
     fn calculate_total_value(
@@ -83,7 +85,8 @@ impl AimEvaluator {
 
         // // Relax mod
         if relax {
-            flow_difficulty *= 0.8;
+            combined_snap_difficulty *= 0.8;
+            // flow_difficulty *= 0.6;
         }
 
         let total_difficulty =

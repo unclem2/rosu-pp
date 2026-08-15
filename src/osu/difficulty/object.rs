@@ -58,7 +58,7 @@ impl<'a> OsuDifficultyObject<'a> {
         let start_time = hit_object.start_time / clock_rate;
 
         let strain_time = delta_time.max(Self::MIN_DELTA_TIME);
-        let small_circle_bonus = (1.0 + (30.0 - scaling_factor.radius) / 40.0).max(1.0);
+        let small_circle_bonus = (1.0 + (80.0 - scaling_factor.radius) / 100.0).max(1.0);
         let overall_difficulty = (79.5 - great_hit_window / 2.0) / 6.0;
 
         let fade_in = 400.0 * (preempt / OsuObject::PREEMPT_MIN).min(1.0);
@@ -149,8 +149,7 @@ impl<'a> OsuDifficultyObject<'a> {
         scaling_factor: &ScalingFactor,
     ) {
         if let OsuObjectKind::Slider(ref slider) = self.base.kind {
-            self.travel_dist = self.lazy_travel_dist
-                * ((1.0 + slider.repeat_count() as f64 / 2.5).powf(1.0 / 2.5));
+            self.travel_dist = self.lazy_travel_dist * 1.0f64.max((slider.repeat_count() as f64).powf(0.3));
 
             self.travel_time =
                 (self.lazy_travel_time / clock_rate).max(OsuDifficultyObject::MIN_DELTA_TIME);
