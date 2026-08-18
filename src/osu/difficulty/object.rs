@@ -58,7 +58,9 @@ impl<'a> OsuDifficultyObject<'a> {
         let start_time = hit_object.start_time / clock_rate;
 
         let strain_time = delta_time.max(Self::MIN_DELTA_TIME);
-        let small_circle_bonus = (1.0 + ((70.0 - scaling_factor.radius) / 50.0).powf(2.0)).max(1.0);
+        // let small_circle_bonus = (1.0 + ((70.0 - scaling_factor.radius) / 50.0).powf(2.0)).max(1.0);
+        let small_circle_bonus = (1.0 + (30.0 - scaling_factor.radius) / 40.0).max(1.0);
+
         let overall_difficulty = (79.5 - great_hit_window / 2.0) / 6.0;
 
         let fade_in = 400.0 * (preempt / OsuObject::PREEMPT_MIN).min(1.0);
