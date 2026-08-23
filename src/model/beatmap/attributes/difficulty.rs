@@ -20,6 +20,8 @@ impl BeatmapDifficulty {
     };
 
     pub fn apply_mods(&mut self, mods: &GameMods, mode: GameMode) {
+        eprintln!("[DEBUG] apply_mods() BEFORE mods: ar={:?}, cs={:?}, hp={:?}, od={:?}", self.ar, self.cs, self.hp, self.od);
+
         // First we *set* values
         if let GameMods::Lazer(mods) = mods {
             macro_rules! set_if_some {
@@ -150,5 +152,7 @@ impl BeatmapDifficulty {
                 self.hp.try_mutate(|hp| *hp *= 0.5);
             }
         }
+
+        eprintln!("[DEBUG] apply_mods() AFTER mods: ar={:?}, cs={:?}, hp={:?}, od={:?}", self.ar, self.cs, self.hp, self.od);
     }
 }

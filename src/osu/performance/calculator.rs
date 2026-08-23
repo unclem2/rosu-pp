@@ -80,6 +80,9 @@ impl OsuPerformanceCalculator<'_> {
         effective_miss_count = effective_miss_count.max(f64::from(state.hitresults.misses));
         effective_miss_count = effective_miss_count.min(f64::from(state.hitresults.total_hits()));
 
+        let od = attrs.od();
+        eprintln!("[DEBUG] od = {od:.4}, effective_miss_count = {effective_miss_count:.4}");
+
         let total_hits = f64::from(total_hits);
 
         let mut multiplier = PERFORMANCE_BASE_MULTIPLIER;

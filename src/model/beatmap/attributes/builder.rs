@@ -55,9 +55,11 @@ impl BeatmapAttributesBuilder {
     }
 
     /// Use the given [`Beatmap`]'s attributes, mode, and convert status.
-    pub const fn map(&mut self, map: &Beatmap) -> &mut Self {
+    pub fn map(&mut self, map: &Beatmap) -> &mut Self {
         self.mode = map.mode;
         self.is_convert = map.is_convert;
+
+        eprintln!("[DEBUG] map() loading ar={:.4}, cs={:.4}, hp={:.4}, od={:.4}", map.ar, map.cs, map.hp, map.od);
 
         self.difficulty = BeatmapDifficulty {
             // Clamping necessary to match lazer on maps like /b/4243836.
@@ -113,12 +115,17 @@ impl BeatmapAttributesBuilder {
     pub fn difficulty(&mut self, difficulty: &Difficulty) -> &mut Self {
         let map_diff = difficulty.get_map_difficulty();
 
+        eprintln!("[DEBUG] difficulty() user overrides ar={:?}, cs={:?}, hp={:?}, od={:?}", map_diff.ar, map_diff.cs, map_diff.hp, map_diff.od);
+
         self.difficulty = BeatmapDifficulty {
             ar: self.difficulty.ar.overwrite(map_diff.ar),
             cs: self.difficulty.cs.overwrite(map_diff.cs),
             hp: self.difficulty.hp.overwrite(map_diff.hp),
             od: self.difficulty.od.overwrite(map_diff.od),
         };
+
+        eprintln!("[DEBUG] difficulty() merged ar={:?}, cs={:?}, hp={:?}, od={:?}", self.difficulty.ar, self.difficulty.cs, self.difficulty.hp, self.difficulty.od);
+
         self.mods = difficulty.get_mods().clone();
         self.clock_rate = Some(difficulty.get_clock_rate());
 
@@ -131,6 +138,8 @@ impl BeatmapAttributesBuilder {
 
         let mut difficulty = self.difficulty.clone();
         difficulty.apply_mods(mods, self.mode);
+
+        eprintln!("[DEBUG] build() FINAL: mode={:?}, clock_rate={:.4}, ar={:?}, cs={:?}, hp={:?}, od={:?}", self.mode, self.clock_rate.unwrap_or(1.0), difficulty.ar, difficulty.cs, difficulty.hp, difficulty.od);
 
         BeatmapAttributes {
             difficulty,
