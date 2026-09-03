@@ -19,6 +19,7 @@ tracing = ["rosu-map/tracing"]
 divan = "0.1.21"
 rosu-map = { version = "0.2.1" }
 rosu-mods = { git = "https://github.com/unclem2/rosu-mods" }
+tracing = "0.1"
 
 [dev-dependencies]
 divan = { version = "0.1.21" }
