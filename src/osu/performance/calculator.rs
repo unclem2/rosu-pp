@@ -81,7 +81,7 @@ impl OsuPerformanceCalculator<'_> {
         effective_miss_count = effective_miss_count.min(f64::from(state.hitresults.total_hits()));
 
         let od = attrs.od();
-        eprintln!("[DEBUG] od = {od:.4}, effective_miss_count = {effective_miss_count:.4}");
+        tracing::debug!(od = od, effective_miss_count = effective_miss_count);
 
         let total_hits = f64::from(total_hits);
 
@@ -103,8 +103,8 @@ impl OsuPerformanceCalculator<'_> {
             // * this is well beyond currently maximum achievable OD which is 12.17 (DTx2 + DA with OD11)
             let (n100_mult, n50_mult) = if od > 0.0 {
                 (
-                    0.75 * (1.0 - od / 9.0).max(0.0),
-                    (1.0 - (od / 9.0).powf(5.0)).max(0.0),
+                    0.75 * (1.0 - od / 12.0).max(0.0),
+                    (1.0 - (od / 12.0).powf(2.0)).max(0.0),
                 )
             } else {
                 (1.0, 1.0)
