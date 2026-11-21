@@ -83,11 +83,11 @@ impl AimEvaluator {
             );
         }
 
-        // // Relax mod
-        if relax {
-            // combined_snap_difficulty *= 0.8;
-            flow_difficulty *= 0.7;
-        }
+        // // // Relax mod
+        // if relax {
+        //     // combined_snap_difficulty *= 0.8;
+        //     flow_difficulty *= 0.7;
+        // }
 
         let total_difficulty =
             combined_snap_difficulty * p_snap + flow_difficulty * p_flow;

@@ -80,9 +80,6 @@ impl OsuPerformanceCalculator<'_> {
         effective_miss_count = effective_miss_count.max(f64::from(state.hitresults.misses));
         effective_miss_count = effective_miss_count.min(f64::from(state.hitresults.total_hits()));
 
-        let od = attrs.od();
-        tracing::debug!(od = od, effective_miss_count = effective_miss_count);
-
         let total_hits = f64::from(total_hits);
 
         let mut multiplier = PERFORMANCE_BASE_MULTIPLIER;
@@ -95,28 +92,28 @@ impl OsuPerformanceCalculator<'_> {
             multiplier *= 1.0 - (f64::from(self.attrs.n_spinners) / total_hits).powf(0.85);
         }
 
-        if self.mods.rx() {
-            let od = self.attrs.od();
+        // if self.mods.rx() {
+        //     let od = self.attrs.od();
 
-            // * https://www.desmos.com/calculator/vspzsop6td
-            // * we use OD13.3 as maximum since it's the value at which great hitwidow becomes 0
-            // * this is well beyond currently maximum achievable OD which is 12.17 (DTx2 + DA with OD11)
-            let (n100_mult, n50_mult) = if od > 0.0 {
-                (
-                    0.75 * (1.0 - od / 12.0).max(0.0),
-                    (1.0 - (od / 12.0).powf(2.0)).max(0.0),
-                )
-            } else {
-                (1.0, 1.0)
-            };
+        //     // * https://www.desmos.com/calculator/vspzsop6td
+        //     // * we use OD13.3 as maximum since it's the value at which great hitwidow becomes 0
+        //     // * this is well beyond currently maximum achievable OD which is 12.17 (DTx2 + DA with OD11)
+        //     let (n100_mult, n50_mult) = if od > 0.0 {
+        //         (
+        //             0.75 * (1.0 - od / 12.0).max(0.0),
+        //             (1.0 - (od / 12.0).powf(2.0)).max(0.0),
+        //         )
+        //     } else {
+        //         (1.0, 1.0)
+        //     };
 
-            // * As we're adding Oks and Mehs to an approximated number of combo breaks the result can be
-            // * higher than total hits in specific scenarios (which breaks some calculations) so we need to clamp it.
-            effective_miss_count = (effective_miss_count
-                + f64::from(self.state.hitresults.n100) * n100_mult
-                + f64::from(self.state.hitresults.n50) * n50_mult)
-                .min(total_hits);
-        }
+        //     // * As we're adding Oks and Mehs to an approximated number of combo breaks the result can be
+        //     // * higher than total hits in specific scenarios (which breaks some calculations) so we need to clamp it.
+        //     effective_miss_count = (effective_miss_count
+        //         + f64::from(self.state.hitresults.n100) * n100_mult
+        //         + f64::from(self.state.hitresults.n50) * n50_mult)
+        //         .min(total_hits);
+        // }
 
         let speed_deviation = self.calculate_speed_deviation();
 
@@ -247,7 +244,7 @@ impl OsuPerformanceCalculator<'_> {
                 );
         }
 
-        aim_value *= self.acc;
+        aim_value *= self.acc.powf(2.0);
 
         aim_value
     }
