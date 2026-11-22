@@ -9,6 +9,15 @@ use crate::{
 const READING_WINDOW_SIZE: f64 = 3000.0;
 const DISTANCE_INFLUENCE_THRESHOLD: f64 = OsuDifficultyObject::NORMALIZED_DIAMETER as f64 * 1.5;
 
+const UNIFORMITY_WINDOW_SIZE: f64 = 1500.0;
+/// `UNIFORMITY_WINDOW_SIZE / OsuDifficultyObject::MIN_DELTA_TIME` plus room for `current`;
+/// the loop also breaks once the buffer is full, so this is only a hard upper bound.
+const UNIFORMITY_MAX_SAMPLES: usize = 128;
+const UNIFORMITY_MIN_SAMPLES: usize = 4;
+const UNIFORMITY_RHYTHM_TOLERANCE: f64 = 0.10;
+const UNIFORMITY_SPACING_TOLERANCE: f64 = 0.25;
+const MIN_UNIFORMITY_NERF: f64 = 0.7;
+
 pub fn evaluate_diff_of(
     curr: &OsuDifficultyObject<'_>,
     diff_objects: &[OsuDifficultyObject<'_>],
@@ -27,13 +36,15 @@ pub fn evaluate_diff_of(
 
     let constant_angle_nerf_factor = get_constant_angle_nerf_factor(curr, diff_objects);
 
+    let uniformity_nerf_factor = get_uniformity_nerf_factor(curr, diff_objects);
+
     let note_density_difficulty = calculate_density_difficulty(
         next_obj,
         velocity,
         constant_angle_nerf_factor,
         past_object_difficulty_influence,
         current_visible_object_density,
-    );
+    ) * uniformity_nerf_factor;
 
     let hidden_difficulty = if hidden {
         calculate_hidden_difficulty(
@@ -43,13 +54,14 @@ pub fn evaluate_diff_of(
             current_visible_object_density,
             velocity,
             constant_angle_nerf_factor,
-        )
+        ) * uniformity_nerf_factor
     } else {
         0.0
     };
 
     let preempt_difficulty =
-        calculate_preempt_difficulty(velocity, constant_angle_nerf_factor, curr.preempt);
+        calculate_preempt_difficulty(velocity, constant_angle_nerf_factor, curr.preempt)
+            * uniformity_nerf_factor;
 
     let reading_difficulty =
         norm(1.5, [preempt_difficulty, hidden_difficulty, note_density_difficulty]);
@@ -211,6 +223,76 @@ fn retrieve_current_visible_object_density(
     }
 
     visible_object_count
+}
+
+/// Measures how *uniform* the recent pattern is by counting how many of the last
+/// `UNIFORMITY_WINDOW_SIZE` milliseconds worth of objects share the window's median
+/// rhythm (`adjusted_delta_time`) and median spacing (`lazy_jump_dist`).
+///
+/// Returns a factor in `[MIN_UNIFORMITY_NERF, 1.0]`, where `1.0` means "irregular
+/// pattern, no nerf" and `MIN_UNIFORMITY_NERF` means "every note identical in both
+/// rhythm and spacing", i.e. a plain stream.
+fn get_uniformity_nerf_factor(
+    current: &OsuDifficultyObject<'_>,
+    diff_objects: &[OsuDifficultyObject<'_>],
+) -> f64 {
+    let mut delta_times = [0.0_f64; UNIFORMITY_MAX_SAMPLES];
+    let mut jump_dists = [0.0_f64; UNIFORMITY_MAX_SAMPLES];
+    let mut count = 0_usize;
+
+    // Include the current object itself so the pattern *around* `current` is measured.
+    delta_times[count] = current.adjusted_delta_time;
+    jump_dists[count] = current.lazy_jump_dist;
+    count += 1;
+
+    let mut index = 0_usize;
+    let mut time_gap = 0.0;
+
+    while count < UNIFORMITY_MAX_SAMPLES && time_gap < UNIFORMITY_WINDOW_SIZE {
+        let Some(loop_obj) = current.previous(index, diff_objects) else {
+            break;
+        };
+
+        time_gap = current.start_time - loop_obj.start_time;
+
+        if time_gap >= UNIFORMITY_WINDOW_SIZE {
+            break;
+        }
+
+        delta_times[count] = loop_obj.adjusted_delta_time;
+        jump_dists[count] = loop_obj.lazy_jump_dist;
+        count += 1;
+        index += 1;
+    }
+
+    if count < UNIFORMITY_MIN_SAMPLES {
+        return 1.0;
+    }
+
+    let delta_times = &mut delta_times[..count];
+    let jump_dists = &mut jump_dists[..count];
+
+    delta_times.sort_unstable_by(f64::total_cmp);
+    jump_dists.sort_unstable_by(f64::total_cmp);
+
+    let median_delta = delta_times[count / 2];
+    let median_jump = jump_dists[count / 2];
+
+    let rhythm_uniformity = delta_times
+        .iter()
+        .filter(|&&dt| (dt - median_delta).abs() <= UNIFORMITY_RHYTHM_TOLERANCE * median_delta)
+        .count() as f64
+        / count as f64;
+
+    let spacing_uniformity = jump_dists
+        .iter()
+        .filter(|&&jump| (jump - median_jump).abs() <= UNIFORMITY_SPACING_TOLERANCE * median_jump)
+        .count() as f64
+        / count as f64;
+
+    let uniformity = rhythm_uniformity * spacing_uniformity;
+
+    1.0 - (1.0 - MIN_UNIFORMITY_NERF) * uniformity
 }
 
 fn get_constant_angle_nerf_factor(
